@@ -112,10 +112,13 @@ func (i *mprop) Set(name, value string) (err error) {
 	} else {
 		i.logger.Debug("st found", util.Fields{"pid": i.initPid, "st": st})
 	}
-	_, err = syscall.PtracePokeData(i.initPid, st, []byte{0x73, 0x6f, 0x2e, 0x00})
-	if err != nil {
-		i.logger.Error("ptrace poke data error", util.Fields{"pid": i.initPid, "error": err})
-		return
+
+	if strings.HasPrefix(name, "ro.") {
+		_, err = syscall.PtracePokeData(i.initPid, st, []byte{0x73, 0x6f, 0x2e, 0x00})
+		if err != nil {
+			i.logger.Error("ptrace poke data error", util.Fields{"pid": i.initPid, "error": err})
+			return
+		}
 	}
 
 	err = syscall.PtraceCont(i.initPid, 0)
