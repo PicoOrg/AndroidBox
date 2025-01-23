@@ -2,6 +2,7 @@
 #define _FUZZ_H_
 #include <stdint.h>
 #include <stdlib.h>
-int LLVMFuzzerTestOneInput(const uint8_t *data, size_t size);
+int LLVMFuzzerTestOneInput(char *data, size_t size);
 
+extern void FuzzMain(char* data, int size);
 #endif

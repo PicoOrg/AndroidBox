@@ -1,6 +1,6 @@
 package main
 
-// #cgo CFLAGS: -g -fsanitize=fuzzer,address -w
+// #cgo CFLAGS: -g -fsanitize=fuzzer,address
 // #include "fuzz.h"
 import "C"
 import (
