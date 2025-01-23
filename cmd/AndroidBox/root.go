@@ -13,7 +13,11 @@ var (
 var (
 	rootCmd = &cobra.Command{
 		PersistentPreRun: func(cmd *cobra.Command, args []string) {
-			logger = util.NewLogger(verbose)
+			if verbose {
+				logger = util.NewLogger(util.DebugLevel)
+			} else {
+				logger = util.NewLogger(util.InfoLevel)
+			}
 		},
 	}
 )

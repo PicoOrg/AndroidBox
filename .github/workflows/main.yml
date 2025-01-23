@@ -26,8 +26,10 @@ jobs:
         run: 'pwd && cat .github/config/main.config.yaml'
       - name: Build AndroidBox
         run: 'pwd && cmd/build/build -f .github/config/main.config.yaml -t ${{ github.ref_name }}'
+      - name: Build fuzz
+        run: 'pwd && cmd/build/build -f .github/config/fuzz.config.yaml -t ${{ github.ref_name }}'
       - name: Create Release
         uses: ncipollo/release-action@v1.15.0
         with:
-          artifacts: cmd/AndroidBox/AndroidBox_*,cmd/build/build
+          artifacts: cmd/build/build,cmd/AndroidBox/AndroidBox_*,cmd/fuzz/fuzz_*
   

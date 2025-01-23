@@ -11,6 +11,7 @@ import (
 
 type Toolchain interface {
 	GetEnv() (env []string)
+	ClangPath() (clang, clangpp string, err error)
 }
 
 type ndkToolchain struct {
@@ -53,13 +54,13 @@ func NewNdkToolchain(ndkPath, arch, level string) Toolchain {
 
 func (tc *ndkToolchain) GetEnv() (env []string) {
 	env = make([]string, 0)
-	clang, clangpp, err := tc.clangPath()
+	clang, clangpp, err := tc.ClangPath()
 	if err != nil {
-		panic(fmt.Sprintf("no compiler for was found in the NDK. %v", err))
+		panic(fmt.Sprintf("no compiler for was found in the NDK. %s, %v", tc.ndkPath, err))
 	}
 	env = append(env, []string{
 		"CGO_CFLAGS=-I" + tc.includePath(),
-		"CGO_LDFLAGS=-L" + tc.libraryPath(),
+		"CGO_LDFLAGS=\"-L" + tc.libraryPath() + " -L" + tc.libraryPathWithApiLevel() + "\"",
 		"GOOS=android",
 		"GOARCH=" + tc.arch,
 		"CC=" + clang,
@@ -72,7 +73,7 @@ func (tc *ndkToolchain) GetEnv() (env []string) {
 	return
 }
 
-func (tc *ndkToolchain) clangPath() (clang, clangpp string, err error) {
+func (tc *ndkToolchain) ClangPath() (clang, clangpp string, err error) {
 	binPath := tc.bin()
 
 	entries, err := os.ReadDir(binPath)
@@ -110,10 +111,16 @@ func (tc *ndkToolchain) includePath() string {
 	return filepath.Join(tc.ndkPath, "toolchains", "llvm", "prebuilt", tc.archNDK(), "sysroot", "usr", "include")
 }
 
-func (tc *ndkToolchain) libraryPath() string {
+func (tc *ndkToolchain) libraryPathWithApiLevel() string {
 	return filepath.Join(tc.ndkPath, "toolchains", "llvm", "prebuilt", tc.archNDK(), "sysroot",
 		"usr", "lib", tc.toolPrefix, tc.level)
 }
+
+func (tc *ndkToolchain) libraryPath() string {
+	return filepath.Join(tc.ndkPath, "toolchains", "llvm", "prebuilt", tc.archNDK(), "sysroot",
+		"usr", "lib", tc.toolPrefix)
+}
+
 func (tc *ndkToolchain) archNDK() string {
 	if runtime.GOOS == "windows" && runtime.GOARCH == "386" {
 		return "windows"

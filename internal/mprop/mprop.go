@@ -38,6 +38,37 @@ func (i *mprop) Set(name, value string) (err error) {
 		i.logger.Debug("property already set", util.Fields{"name": name, "value": value})
 		return
 	}
+	if strings.HasPrefix(name, "ro.") {
+		return i.setEnforce(name, value)
+	} else {
+		return i.setNormal(name, value)
+	}
+}
+
+func (i *mprop) setNormal(name, value string) (err error) {
+	var realValue string
+	for times := 0; times <= 10; times++ {
+		err = ndk.SystemPropertySet(name, value)
+		if err != nil {
+			i.logger.Error("system_property_set error", util.Fields{"error": err})
+			return
+		}
+		time.Sleep(time.Millisecond)
+		realValue, err = ndk.SystemPropertyGet(name)
+		if err != nil {
+			i.logger.Error("system_property_get error", util.Fields{"error": err})
+			return
+		}
+		if realValue == value {
+			return
+		}
+	}
+	err = fmt.Errorf("set property or, name: %s, value: %s, real value: %s", name, value, realValue)
+	i.logger.Error("set property error", util.Fields{"name": name, "value": value, "real value": realValue, "error": err})
+	return
+}
+
+func (i *mprop) setEnforce(name, value string) (err error) {
 
 	err = syscall.PtraceAttach(i.initPid)
 	if err != nil {
@@ -127,20 +158,9 @@ func (i *mprop) Set(name, value string) (err error) {
 		return
 	}
 
-	for {
-		err = ndk.SystemPropertySet(name, value)
-		if err != nil {
-			i.logger.Error("system_property_set error", util.Fields{"error": err})
-			return
-		}
-		time.Sleep(time.Millisecond)
-		realValue, err := ndk.SystemPropertyGet(name)
-		if err != nil {
-			i.logger.Error("system_property_get error", util.Fields{"error": err})
-		}
-		if realValue == value {
-			break
-		}
+	err = i.setNormal(name, value)
+	if err != nil {
+		return
 	}
 
 	err = syscall.Kill(i.initPid, syscall.SIGSTOP)

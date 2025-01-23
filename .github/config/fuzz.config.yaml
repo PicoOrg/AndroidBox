@@ -1,0 +1,4 @@
+build_path: cmd/fuzz
+api_level: [33]
+arch: [arm64, arm, amd64, 386]
+fuzz: true

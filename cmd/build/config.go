@@ -5,4 +5,5 @@ type config struct {
 	NdkPath   string   `yaml:"ndk_path" mapstructure:"ndk_path"`
 	ApiLevel  []string `yaml:"api_level" mapstructure:"api_level"`
 	Arch      []string `yaml:"arch" mapstructure:"arch"`
+	Fuzz      bool     `yaml:"fuzz" mapstructure:"fuzz"`
 }
