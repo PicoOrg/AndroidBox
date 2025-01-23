@@ -1,13 +1,12 @@
 name: AndroidBox Dev
 run-name: AndroidBox build
 on:
-  push:
-    branches:         # array of glob patterns matching against refs/heads. Optional; defaults to all
-      - dev          # triggers on pushes that contain changes in main
-
+  workflow_dispatch:
 jobs:
   build:
     runs-on: ubuntu-24.04
+    permissions:
+      contents: write
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5.2.0
@@ -19,7 +18,9 @@ jobs:
       - name: Build the build tool
         run: 'pwd && go mod tidy && cd cmd/build && go build .'
       - name: check build config
-        run: 'pwd && cat .github/config/dev.config.yaml'
+        run: 'pwd && cat .github/config/main.config.yaml'
       - name: Build AndroidBox
-        run: 'pwd && cmd/build/build -f .github/config/dev.config.yaml'
-            
+        run: 'pwd && cmd/build/build -f .github/config/main.config.yaml -t ${{ github.ref_name }}'
+      - name: Build fuzz
+        run: 'pwd && cmd/build/build -f .github/config/fuzz.config.yaml -t ${{ github.ref_name }}'
+  
