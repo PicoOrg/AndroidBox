@@ -65,7 +65,7 @@ func main() {
 			toolchain := NewNdkToolchain(cfg.NdkPath, arch, level)
 			filename := fmt.Sprintf("%s%s_android%s_%s", filepath.Base(cfg.BuildPath), tag, level, arch)
 			if cfg.Fuzz {
-				cmd := exec.Command("go", "build", "-buildmode=c-shared", "-o", filename+".so")
+				cmd := exec.Command("go", "build", "-buildmode=c-shared", "-o", filename+".so", ".")
 				cmd.Dir = cfg.BuildPath
 				cmd.Env = append(cmd.Env, os.Environ()...)
 				cmd.Env = append(cmd.Env, toolchain.GetEnv()...)
