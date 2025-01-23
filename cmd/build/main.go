@@ -4,7 +4,6 @@ import (
 	"flag"
 	"fmt"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/viper"
@@ -63,47 +62,24 @@ func main() {
 	for _, level := range cfg.ApiLevel {
 		for _, arch := range cfg.Arch {
 			toolchain := NewNdkToolchain(cfg.NdkPath, arch, level)
+			e := NewExec(cfg, toolchain)
 			filename := fmt.Sprintf("%s%s_android%s_%s", filepath.Base(cfg.BuildPath), tag, level, arch)
 			if cfg.Fuzz {
-				cmd := exec.Command("go", "build", "-buildmode=c-shared", "-o", filename+".so", ".")
-				cmd.Dir = cfg.BuildPath
-				cmd.Env = append(cmd.Env, os.Environ()...)
-				cmd.Env = append(cmd.Env, toolchain.GetEnv()...)
-				cmd.Stderr = os.Stderr
-				cmd.Stdout = os.Stdout
-				cmd.Stdin = os.Stdin
-				// fmt.Println(cmd.Env)
-				// fmt.Println(cmd)
-				if err := cmd.Run(); err != nil {
+				err := e.Run("go", "build", "-buildmode=c-shared", "-o", filename+".so", ".")
+				if err != nil {
 					panic(err)
 				}
 				_, clangpp, err := toolchain.ClangPath()
 				if err != nil {
 					panic(err)
 				}
-				cmd = exec.Command(clangpp, "-g", "-fsanitize=fuzzer,address", "-static-libstdc++", filename+".so", "-o", filename)
-				cmd.Dir = cfg.BuildPath
-				cmd.Env = append(cmd.Env, os.Environ()...)
-				cmd.Env = append(cmd.Env, toolchain.GetEnv()...)
-				cmd.Stderr = os.Stderr
-				cmd.Stdout = os.Stdout
-				cmd.Stdin = os.Stdin
-				// fmt.Println(cmd.Env)
-				// fmt.Println(cmd)
-				if err := cmd.Run(); err != nil {
+				err = e.Run(clangpp, "-g", "-fsanitize=fuzzer,address", "-static-libstdc++", "-Wimplicit-function-declaration", filename+".so", "-o", filename)
+				if err != nil {
 					panic(err)
 				}
 			} else {
-				cmd := exec.Command("go", "build", "-o", filename, ".")
-				cmd.Dir = cfg.BuildPath
-				cmd.Env = append(cmd.Env, os.Environ()...)
-				cmd.Env = append(cmd.Env, toolchain.GetEnv()...)
-				cmd.Stderr = os.Stderr
-				cmd.Stdout = os.Stdout
-				cmd.Stdin = os.Stdin
-				// fmt.Println(cmd.Env)
-				// fmt.Println(cmd)
-				if err := cmd.Run(); err != nil {
+				err := e.Run("go", "build", "-o", filename, ".")
+				if err != nil {
 					panic(err)
 				}
 			}
