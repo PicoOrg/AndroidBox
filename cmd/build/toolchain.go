@@ -10,6 +10,8 @@ import (
 )
 
 type Toolchain interface {
+	GetIncludePaths() (paths []string)
+	GetLibPaths() (paths []string)
 	GetEnv() (env []string)
 	ClangPath() (clang, clangpp string, err error)
 }
@@ -59,7 +61,7 @@ func (tc *ndkToolchain) GetEnv() (env []string) {
 		panic(fmt.Sprintf("no compiler for was found in the NDK. %s, %v", tc.ndkPath, err))
 	}
 	env = append(env, []string{
-		"CGO_CFLAGS=-I" + tc.includePath(),
+		"CGO_CFLAGS=\"-I" + tc.includePath() + "\"",
 		"CGO_LDFLAGS=\"-L" + tc.libraryPath() + " -L" + tc.libraryPathWithApiLevel() + "\"",
 		"GOOS=android",
 		"GOARCH=" + tc.arch,
@@ -119,6 +121,18 @@ func (tc *ndkToolchain) libraryPathWithApiLevel() string {
 func (tc *ndkToolchain) libraryPath() string {
 	return filepath.Join(tc.ndkPath, "toolchains", "llvm", "prebuilt", tc.archNDK(), "sysroot",
 		"usr", "lib", tc.toolPrefix)
+}
+
+func (tc *ndkToolchain) GetIncludePaths() (paths []string) {
+	paths = make([]string, 0)
+	paths = append(paths, tc.includePath())
+	return paths
+}
+
+func (tc *ndkToolchain) GetLibPaths() (paths []string) {
+	paths = make([]string, 0)
+	paths = append(paths, tc.libraryPath(), tc.libraryPathWithApiLevel())
+	return paths
 }
 
 func (tc *ndkToolchain) archNDK() string {
